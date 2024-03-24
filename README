@@ -1,0 +1,101 @@
+I would like to apologize beforehand if the writing below is mega scuffed. I
+don't know the exact terminologies for most of these. You should treat this as
+a writing made by someone that knows nothing but the crust of the subject.
+
+The intuition behind this algorithm is to mimic how humans (atleast how I) 
+would solve it.
+
+It started from the thought of evaluating each clauses, for example, if we were
+to have a formula like
+
+(A v ~B v C) ^ (A v B v ~C)
+
+Let's evaluate each of the clauses one by one.
+(A v ~B v C)
+The clause above indicates that for it to be true, the minimum requirement would
+be for A to be true, for B to be false, or for C to be true.
+We can represent this clause as 101.
+
+Next up.
+(A v B v ~C)
+The minimum requirement would be for A to be true, B to be true, or C to be
+false.
+We can represent this clause as 110.
+
+Now, if we compare both clauses, we can see that there's a difference for the
+variable B and C.
+
+(A v ~B v C) = 101
+(A v B v ~C) = 110
+
+If we apply something akin to the AND operator here, we'd get 100.
+This indicates that for both clauses to be true, the minimum for it would be to
+have A be true. With that, the other variables can be of any combination and it
+wouldn't matter since we've gotten the minimum requirement.
+
+But applying AND there would result to 100, in which the 0 doesn't mean negate,
+rather, it means there's a conflict for that variable. We'd like to use some
+other number for conflicts. For now, we'll say that it's 2 for conflicts.
+
+Now, say if we have a formula like
+
+(A v ~B) ^ (B v C)
+
+How would we represent it? Well, we would simply use another number to fill the
+empty part of the clause. We will use 3 for that. With that out of the way, for
+the formula above, we would represent it as
+
+(A v ~B) = 103
+(B v C)  = 311
+
+in which we can evaluate between those two, resulting in 121
+
+Now why does it simply evaluated to 121? What happened to those 3s? Simply put,
+if they're nonexistent in a clause, then their literal shouldn't matter for that
+clause too. Thus if there is a clause that has a variable A, and another that
+does not, then no matter what A is, it will not affect the second clause, thus
+it's importance is on what the first clause wants.
+
+There's a case in which they all "conflicts" in a fashion like
+
+(A v ~B v ~C) ^ (~A v B v ~C) ^ (B v C)
+
+which would be represented as 
+(A v ~B v ~C) = 100
+(~A v B v ~C) = 010
+(B v C)       = 311
+
+resulting in 222 if we evaluate it naively.
+We can tell that comparing 100 with 010 would result in 220. A step after would
+result in all conflicts.
+
+The solution to that would be starting from the all conflicting one, we will
+backtrack by one step, with 220 on our hand. After that, we will check for a
+variable that exists in the third clause (0 or 1) in which it is previously
+discarded because of conflict (or in other words, 2). Looking at 311 and 220, we
+can tell that A doesn't exist in the third clause, so we can't use it. But for B
+we can use it since it is 2 in 220 and 1 in 311. With that, we will store back
+the discarded variable and use the literal of the latest clause. We would also
+make sure that after this, the 0 in 220 would never change again, since having
+it change would ruin the agreement that it is the minimum requirement for the 
+previous clauses. We will represent a permanent 0 as 4 and a permanent 1 as 5.
+
+With all of that out of the way, we should get the result 214
+Since this is the final evaluation for the entire formula, we can translate this
+to: 
+"The formula (A v ~B v ~C) ^ (~A v B v ~C) ^ (B v C) has a solution, one of
+which is of B to be TRUE, C to be FALSE, and A to be any as long as the other
+defined variables holds the literals given."
+
+We can (somewhat) be confident that it has a solution, since something with no
+solution would mean that it is all conflicting with 0 discarded variables other
+than itself. This might be an edgecase for some implementation, so make sure to
+properly handle this (the code in this repo most likely suffers this lol).
+
+The numbers here have the definition as below
+0 = false (or negated)
+1 = true (or not negated)
+2 = discarded for conflicting
+3 = empty
+4 = permanent false
+5 = permanent true

@@ -99,3 +99,34 @@ The numbers here have the definition as below
 3 = empty
 4 = permanent false
 5 = permanent true
+
+================================================================================
+
+Hi, this is most likely the end of this journey, as I have found a fatal flaw of
+my logic. The implementation of the entire thing ends here as I cannot 
+circumnavigate around the flaw anymore. Let's understand what I'm talking about
+by looking at an example below:
+
+(A v ~B) ^ (~A v B) ^ (A)
+
+As you can see, this roughly gets translated to
+
+10
+01
+13
+
+Say if we evaluate the first two clause, we'd get 22, in which we'd step back,
+supposedly pick one of them to be set permanent (the implementation was made
+before I realized this), and then continue onward, but imagine if we arbitrarily
+pick B to be set permanent. We will set B to be 4, thus making it so that for
+the second clause, the only option is for A to be 0, but with the third clause,
+A has to be 1, so the algorithm would think that this formula has no solution,
+even though A = 1 and B = 1 is a valid solution.
+
+As you can see, the moment we chose the wrong one to be set permanent, we will
+have to pay the price of backtracking more than 1 step. With that, it is no
+longer the linear evaluation that i had hoped for. It now acts more like a
+heuristic, which is not what I wanted at all.
+
+Perhaps I'll revisit this in hope that some additions I think are heuristics are
+actually something else that can revive this project.

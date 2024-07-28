@@ -2,43 +2,8 @@ use std::io::{BufRead, Read};
 use std::num::ParseIntError;
 use std::{fs::File, io::BufReader};
 
-#[derive(Debug)]
-pub struct InputVariableState {
-    pub idx: usize,
-    pub nonnegated: bool,
-}
-
-#[derive(Debug)]
-pub struct InputClause(Vec<InputVariableState>);
-
-impl InputClause {
-    pub fn iter(&self) -> ClauseIter {
-        ClauseIter {
-            clause: self,
-            idx: 0,
-        }
-    }
-}
-
-pub struct ClauseIter<'a> {
-    clause: &'a InputClause,
-    idx: usize,
-}
-
-impl<'a> Iterator for ClauseIter<'a> {
-    type Item = &'a InputVariableState;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.idx >= self.clause.0.len() {
-            return None;
-        }
-
-        let output = &self.clause.0[self.idx];
-        self.idx += 1;
-
-        Some(output)
-    }
-}
+type InputVariable = isize;
+pub type InputClause = Vec<InputVariable>;
 
 pub struct Parser<R: Read> {
     variables: usize,
@@ -53,8 +18,8 @@ impl Parser<File> {
         let mut header = String::new();
         reader.read_line(&mut header).unwrap();
 
-        // println!("{header}");
-
+        // This is to skip the comments and whitespaces before the header
+        // which usually starts with 'p' for problem
         while !header.starts_with('p') {
             header.truncate(0);
             reader.read_line(&mut header).ok().unwrap();
@@ -80,32 +45,23 @@ impl Parser<File> {
         let mut input = String::new();
         self.reader.read_line(&mut input).ok()?;
 
-        // println!("{} {}", input, input.trim().is_empty());
         while input.starts_with('c') || input.trim().is_empty() {
-            // println!("{input}");
             input.truncate(0);
-            self.reader.read_line(&mut input).ok()?;
+            let bytes_read = self.reader.read_line(&mut input).ok()?;
+            if bytes_read == 0 {
+                return None;
+            }
         }
 
-        let variables: Vec<Result<Option<InputVariableState>, ParseIntError>> = input
+        let variables: Vec<Result<Option<InputVariable>, ParseIntError>> = input
             .split_whitespace()
             .map(|n| {
                 let mut variable = n.parse::<isize>()?;
-                let mut negated = false;
-
                 if variable == 0 {
                     return Ok(None);
                 }
 
-                if variable < 0 {
-                    negated = true;
-                    variable *= -1;
-                }
-
-                Ok(Some(InputVariableState {
-                    idx: (variable - 1) as usize,
-                    nonnegated: !negated,
-                }))
+                Ok(Some(variable))
             })
             .collect();
 
@@ -116,7 +72,7 @@ impl Parser<File> {
             .flatten()
             .collect();
 
-        Some(InputClause(variables))
+        Some(variables)
     }
 
     pub fn get_variables(&self) -> usize {
